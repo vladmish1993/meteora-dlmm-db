@@ -1,4 +1,4 @@
-import MeteoraDlmmDb from "./meteora-dlmm-db";
+import ClmmDb from "./clmm-db";
 import { delay } from "./util";
 
 let Dexie: any;
@@ -13,7 +13,7 @@ async function init() {
     Dexie = dexie.Dexie;
   }
   if (!db) {
-    db = new Dexie("meteora-dlmm-db");
+    db = new Dexie("raydium-clmm-db");
     db.version(1).stores({
       db: "id",
     });
@@ -36,12 +36,12 @@ export async function writeData(data: Uint8Array): Promise<void> {
 }
 
 // Read function
-export async function readData(): Promise<MeteoraDlmmDb> {
+export async function readData(): Promise<ClmmDb> {
   while (saving) {
     await delay(50);
   }
   await init();
   const record = await table.get(1);
 
-  return MeteoraDlmmDb.create(record?.data);
+  return ClmmDb.create(record?.data);
 }

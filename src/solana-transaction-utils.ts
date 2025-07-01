@@ -7,7 +7,7 @@ import {
   type ParsedTransactionWithMeta,
   type PartiallyDecodedInstruction,
 } from "@solana/web3.js";
-import { MeteoraDownloaderConfig } from "./meteora-dlmm-downloader";
+import { RaydiumDownloaderConfig } from "./clmm-downloader";
 import { ApiThrottle, chunkArray } from "./util";
 
 const CHUNK_SIZE = 250;
@@ -88,7 +88,7 @@ export function getTokenTransfers(
   );
 }
 
-interface ParsedTransactionStreamConfig extends MeteoraDownloaderConfig {
+interface ParsedTransactionStreamConfig extends RaydiumDownloaderConfig {
   onParsedTransactionsReceived: (
     transactions: (ParsedTransactionWithMeta | null)[],
   ) => Promise<any>;

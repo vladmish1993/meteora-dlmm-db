@@ -1,4 +1,4 @@
-import MeteoraDlmmDb from "./meteora-dlmm-db";
+import ClmmDb from "./clmm-db";
 
 let fs: any;
 async function init() {
@@ -11,16 +11,16 @@ async function init() {
 export async function writeData(data: Uint8Array): Promise<void> {
   await init();
 
-  fs.writeFileSync("./meteora-dlmm.db", data);
+  fs.writeFileSync("./raydium-dlmm.db", data);
 }
 
 // Read function
-export async function readData(): Promise<MeteoraDlmmDb> {
+export async function readData(): Promise<ClmmDb> {
   await init();
   try {
-    const data = fs.readFileSync("./meteora-dlmm.db");
-    return MeteoraDlmmDb.create(data);
+    const data = fs.readFileSync("./raydium-dlmm.db");
+    return ClmmDb.create(data);
   } catch (err) {
-    return MeteoraDlmmDb.create();
+    return ClmmDb.create();
   }
 }
