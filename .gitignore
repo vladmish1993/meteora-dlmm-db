@@ -179,7 +179,6 @@ package-lock.json
 
 # Databases
 *.sqlite
-*.db
 
 # Visual Studio Code
 .vscode
