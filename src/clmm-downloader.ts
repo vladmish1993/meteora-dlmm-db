@@ -6,7 +6,7 @@ import {
     type ParsedTransactionWithMeta,
 } from "@solana/web3.js";
 import {JupiterTokenListApi, TokenMeta} from "./jupiter-token-list-api";
-import {RaydiumClmmApi} from './raydium-clmm-api';
+import {RaydiumClmmApi, RaydiumUsdTx} from './raydium-clmm-api';
 import ClmmDb from "./clmm-db";
 import {
     RaydiumClmmInstruction,
@@ -174,6 +174,9 @@ export default class RaydiumDownloader {
         let instructionCount = 0;
         const start = Date.now();
         transactions.forEach((transaction) => {
+            if (transaction) {
+                console.log(transaction['transaction']['signatures'][0]);
+            }
             parseRaydiumInstructions(transaction).forEach(async (instruction) => {
                 if (this._transactionDownloadCancelled) {
                     return this._fetchUsd();
@@ -321,11 +324,12 @@ export default class RaydiumDownloader {
                 const address = missingUsd.shift();
                 if (address) {
                     this._usdPositionAddresses.add(address);
-                    const usd = await RaydiumClmmApi.getUsdTransactions(address);
+                    // const usd = await RaydiumClmmApi.getUsdTransactions(address);
+                    const usd: RaydiumUsdTx[] = [];
                     if (this._fullyCancelled) {
                         return;
                     }
-                    await this._db.getUsdTransactions(address, usd);
+                    await this._db.addUsdTransactions(address, usd);
                     const elapsed = Math.round((Date.now() - this._startTime) / 1000);
                     console.log(
                         `${elapsed}s - Added USD transactions for position ${address}`,

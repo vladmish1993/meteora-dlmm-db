@@ -3,6 +3,13 @@ import {RaydiumClmmAccounts, RaydiumInstructionType, TokenTransferInfo} from "./
 
 const API = "https://api-v3.raydium.io/pools/info/ids?ids=";
 
+export interface RaydiumUsdTx {
+  signature:  string;
+  slot:       number;
+  blockTime:  number;
+  usd:        number;
+}
+
 export interface RaydiumClmmPairData {
   /** pool_state / pair id */
   id: string;
@@ -50,19 +57,19 @@ export class RaydiumClmmApi {
     RaydiumClmmApi._throttle.interval = params.interval;
   }
 
-  static getDlmmPairData(lbPair: string): Promise<RaydiumClmmPairData | null> {
+  static getDlmmPairData(pool: string): Promise<RaydiumClmmPairData | null> {
     return RaydiumClmmApi._throttle.processItem(
-        lbPair,
+        pool,
         RaydiumClmmApi._fetchPairData
     );
   }
 
-  private static async _fetchPairData(lbPair: string): Promise<RaydiumClmmPairData | null> {
+  private static async _fetchPairData(pool: string): Promise<RaydiumClmmPairData | null> {
     try {
-      const response = await fetch(API + lbPair);
+      const response = await fetch(API + pool);
       const text = await response.text();
       if (text.trim().startsWith('<')) {
-        console.error(`HTML response instead of JSON from Raydium API for pair ${lbPair}`);
+        console.error(`HTML response instead of JSON from Raydium API for pair ${pool}`);
         return null;
       }
       const json = JSON.parse(text);
@@ -78,7 +85,7 @@ export class RaydiumClmmApi {
         fundFeeBps: p.config.fundFeeBps,
       };
     } catch (e) {
-      console.error(`Error fetching Raydium pair ${lbPair}:`, e);
+      console.error(`Error fetching Raydium pair ${pool}:`, e);
       return null;
     }
   }

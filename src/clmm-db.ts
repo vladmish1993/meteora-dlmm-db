@@ -5,8 +5,8 @@ import {
     RaydiumInstructionType,
     TokenTransferInfo
 } from "./raydium-instruction-parser";
-import {type RaydiumClmmPairData} from "./raydium-clmm-api";
-import {type TokenMeta} from "./jupiter-token-list-api";
+import {type RaydiumClmmPairData, RaydiumUsdTx} from "./raydium-clmm-api";
+import {_getJupiterPrices, type TokenMeta} from "./jupiter-token-list-api";
 import RaydiumDownloader, {
     RaydiumDownloaderConfig,
 } from "./clmm-downloader";
@@ -790,7 +790,8 @@ export default class ClmmDb {
                    (2, 'add'),
                    (3, 'claim'),
                    (4, 'remove'),
-                   (5, 'close') ON CONFLICT DO NOTHING
+                   (5, 'close')
+            ON CONFLICT DO NOTHING
         `);
     }
 
@@ -834,7 +835,7 @@ export default class ClmmDb {
 
             const {
                 position: $position_address,
-                lbPair: $pair_address,
+                pool: $pair_address,
                 sender: $owner_address,
             } = accounts;
 
@@ -877,7 +878,7 @@ export default class ClmmDb {
         });
     }
 
-    async getLbPair(position_address: string): Promise<string | undefined> {
+    async getPoolForPosition(position_address: string): Promise<string | undefined> {
         return this._queueDbCall(() => {
             const result = this._db
                 .exec(
@@ -979,7 +980,7 @@ export default class ClmmDb {
         });
     }
 
-    async getMissingPairs(): Promise<string[]> {
+    async getMissingPools(): Promise<string[]> {
         return this._queueDbCall(() => {
             return this._db
                 .exec(`SELECT *
@@ -1063,6 +1064,108 @@ export default class ClmmDb {
                 return undefined;
             }
             return signature[0] as string;
+        });
+    }
+
+    async getUsdTransactions(position_address: string): Promise<RaydiumUsdTx[]> {
+        // 1. pull every transfer for this position
+        const rows = await this._queueDbCall(() => {
+            return this._db.exec(`
+      SELECT
+        t.signature,
+        i.slot,
+        i.block_time,
+        t.mint,
+        t.amount,
+        tok.decimals
+      FROM token_transfers t
+        JOIN instructions i
+          ON i.signature = t.signature
+         AND i.position_address = t.position_address
+        JOIN tokens tok
+          ON tok.address = t.mint
+      WHERE t.position_address = '${position_address}'
+    `)[0]?.values ?? [];
+        });
+
+        if (rows.length === 0) return [];
+
+        // 2. fetch spot prices for every mint (Raydium first, Jupiter fallback)
+        const mints = [...new Set(rows.map(r => r[3]))] as string[];
+        let prices: Record<string, number> = {};
+
+        // Raydium price endpoint – returns { data: { mint: price } }
+        try {
+            const ray = await fetch(
+                'https://api-v3.raydium.io/mint/price?ids=' + mints.join(',')
+            ).then(r => r.json());
+            prices = ray?.data ?? {};
+        } catch { /* ignore – Jupiter fallback next */ }
+
+        if (Object.keys(prices).length < mints.length) {
+            const jup = await _getJupiterPrices(mints);
+            prices = { ...jup, ...prices };   // Raydium price wins if duplicated
+        }
+
+        // 3. aggregate → usd-per-signature
+        const map = new Map<string, RaydiumUsdTx>();
+
+        for (const [signature, slot, blockTime, mint, rawAmount, decimals] of rows) {
+            const key = signature as string;
+            const amount = Number(rawAmount) / 10 ** Number(decimals);
+            const usd = amount * (prices[mint as string] ?? 0);
+
+            if (!map.has(key)) {
+                map.set(key, {
+                    signature: key,
+                    slot: Number(slot),
+                    blockTime: Number(blockTime),
+                    usd: 0
+                });
+            }
+            map.get(key)!.usd += usd;
+        }
+
+        return [...map.values()];
+    }
+
+    async addUsdTransactions(
+        position_address: string,
+        usdTxs: RaydiumUsdTx[]
+    ) {
+        await this._queueDbCall(() => {
+            for (const tx of usdTxs) {
+                // locate the instruction_type once for this tx
+                const r = this._db.exec(`
+        SELECT instruction_type
+        FROM   instructions
+        WHERE  signature = '${tx.signature}'
+          AND  position_address = '${position_address}'
+        LIMIT  1
+      `)[0]?.values;
+
+                if (!r?.length) continue;
+                const instruction_type = r[0][0] as string;
+
+                // split evenly across the two token rows
+                const half = tx.usd / 2;
+
+                this._addUsdXStatement.run({
+                    $signature:        tx.signature,
+                    $position_address: position_address,
+                    $instruction_type: instruction_type,
+                    $amount:           half,
+                });
+                this._addUsdYStatement.run({
+                    $signature:        tx.signature,
+                    $position_address: position_address,
+                    $instruction_type: instruction_type,
+                    $amount:           half,
+                });
+            }
+
+            // finally flag any untouched rows as “attempted”
+            this._fillMissingUsdStatement.run({ $position_address: position_address });
         });
     }
 

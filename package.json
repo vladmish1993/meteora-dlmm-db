@@ -1,5 +1,5 @@
 {
-  "name": "@geeklad/meteora-dlmm-db",
+  "name": "@vladmish1993/meteora-dlmm-db",
   "version": "2.3.3",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -9,7 +9,7 @@
     "/src"
   ],
   "scripts": {
-    "build": "bun run build/build-cache.ts && tsc"
+    "build": "tsx build/build-cache.ts && tsc"
   },
   "dependencies": {
     "@meteora-ag/dlmm": "^1.4.11",

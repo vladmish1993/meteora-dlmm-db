@@ -64,28 +64,17 @@ export function getAccountMetas(
 }
 
 export function getTokenTransfers(
-  transaction: ParsedTransactionWithMeta,
-  index: number,
-): (ParsedInstruction | PartiallyDecodedInstruction)[] {
-  if (index == -1) {
-    return [];
-  }
+    transaction: ParsedTransactionWithMeta,
+    index: number,
+): ParsedTokenTransfer[] {
+  if (index === -1) return [];
 
-  const instruction = transaction.meta?.innerInstructions?.find(
-    (i) => i.index == index,
+  const inner = transaction.meta?.innerInstructions?.find(
+      (i) => i.index === index,
   );
+  if (!inner) return [];
 
-  if (instruction == undefined) {
-    return [];
-  }
-
-  return instruction.instructions.filter(
-    (i) =>
-      "program" in i &&
-      i.program == "spl-token" &&
-      "parsed" in i &&
-      i.parsed.type.match(/^transfer/) !== null,
-  );
+  return inner.instructions.filter(isParsedTokenTransfer);
 }
 
 interface ParsedTransactionStreamConfig extends RaydiumDownloaderConfig {
@@ -97,6 +86,32 @@ interface ParsedTransactionStreamConfig extends RaydiumDownloaderConfig {
   mostRecentSignature?: string;
   oldestSignature?: string;
   oldestDate?: Date;
+}
+
+/* ------------------------------------------------------------------------- */
+/*  Narrow type for SPL-Token transfer instructions                          */
+/* ------------------------------------------------------------------------- */
+interface ParsedTokenTransfer extends ParsedInstruction {
+  program: "spl-token";
+  parsed: {
+    type: string; // "transfer", "transferChecked", …
+    info: {
+      mint: string;
+      tokenAmount?: { amount: string }; // transferChecked
+      amount?: string;                  // legacy transfer
+    };
+  };
+}
+
+function isParsedTokenTransfer(
+    ix: ParsedInstruction | PartiallyDecodedInstruction,
+): ix is ParsedTokenTransfer {
+  return (
+      "program" in ix &&
+      ix.program === "spl-token" &&
+      "parsed" in ix &&
+      (ix.parsed as any)?.info?.mint !== undefined
+  );
 }
 
 export class ParsedTransactionStream {

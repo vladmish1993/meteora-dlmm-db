@@ -2,6 +2,9 @@ import cache from "./jupiter-token-list-cache";
 import { ApiThrottleCache } from "./util";
 
 const JUPITER_TOKEN_LIST_API = "https://tokens.jup.ag";
+const PRICE_API = "https://api.jup.ag/price/v2?vsToken=USDC&ids=";
+/** Jupiter allows ±20 price queries / s without an API-key */
+const priceThrottle = new ApiThrottleCache(20, 1_000);
 const MAX_CONCURRENT_REQUESTS = 10;
 const DELAY_MS = 30 * 1000;
 const JUPITER_TOKEN_LIST_CACHE = cache as {
@@ -86,3 +89,15 @@ export class JupiterTokenListApi {
     return { address: token.address, name, symbol, decimals, logoURI };
   }
 }
+
+export async function _getJupiterPrices(mints: string[]): Promise<Record<string, number>> {
+  const ids = [...new Set(mints)].join(",");
+  return priceThrottle.processItem(ids, async () => {
+    const res  = await fetch(PRICE_API + ids);
+    const json = await res.json();
+    const out: Record<string, number> = {};
+    for (const k in json.data) out[k] = Number(json.data[k].price);
+    return out;
+  });
+}
+
