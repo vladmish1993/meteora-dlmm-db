@@ -9,7 +9,7 @@
     "/src"
   ],
   "scripts": {
-    "build": "tsx build/build-cache.ts && tsc"
+    "build": "bun build/build-cache.ts && tsc"
   },
   "dependencies": {
     "@meteora-ag/dlmm": "^1.4.11",

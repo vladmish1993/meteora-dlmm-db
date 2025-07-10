@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "ES2020",
+    "target": "ES2022",
+    "module": "esnext",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "strict": true,
-    "lib": ["ES2020", "DOM"],
+    "lib": ["ES2022", "DOM"],
     "outDir": "./dist",
     "rootDir": "./src",
     "skipLibCheck": true,

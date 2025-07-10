@@ -239,7 +239,7 @@ export default class RaydiumDownloader {
             while (missingPairs.length > 0) {
                 const address = missingPairs.shift();
                 if (address) {
-                    const missingPair = await RaydiumClmmApi.getDlmmPairData(address);
+                    const missingPair = await RaydiumClmmApi.getClmmPairData(address);
                     if (this._transactionDownloadCancelled) {
                         return this._fetchUsd();
                     }
