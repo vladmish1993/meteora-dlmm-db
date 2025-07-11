@@ -900,26 +900,24 @@ export default class ClmmDb {
     }
 
     async addPair(pair: RaydiumClmmPairData) {
-        const {
-            id: $pair_address,
-            name: $name,
-            mintA: $mint_x,
-            mintB: $mint_y,
-            tickSpacing: $tick_spacing,
-            tradeFeeBps: $trade_fee_bps,
-            protocolFeeBps: $protocol_fee_bps,
-            fundFeeBps: $fund_fee_bps,
-        } = pair;
+        await this._queueDbCall(() => {
+            const {
+                lbPair:      $pair_address,
+                name:        $name,
+                mintX:       $mint_x,
+                mintY:       $mint_y,
+                tickSpacing: $tick_spacing,
+                feeBps:      $fee_bps,
+            } = pair;
 
-        this._addPairStatement.run({
-            $pair_address,
-            $name,
-            $mint_x,
-            $mint_y,
-            $tick_spacing,
-            $trade_fee_bps,
-            $protocol_fee_bps,
-            $fund_fee_bps,
+            this._addPairStatement.run({
+                $pair_address,
+                $name,
+                $mint_x,
+                $mint_y,
+                $tick_spacing,
+                $fee_bps,
+            });
         });
     }
 

@@ -2,7 +2,12 @@ import fs from "fs";
 import path from "path";
 import {ApiThrottleCache} from "./util";
 import {RaydiumClmmAccounts, RaydiumInstructionType, TokenTransferInfo} from "./raydium-instruction-parser";
-const CACHE_PATH = path.resolve("./raydium-clmm-cache.ts");
+
+const CACHE_FILE = "raydium-clmm-cache.ts";
+const CACHE_PATH = path.resolve(
+    __dirname,
+    "./" + CACHE_FILE,
+);
 
 /* -------------------------------- constants ------------------------------- */
 const POOL_INFO_BY_ID = "https://api-v3.raydium.io/pools/info/ids?ids=";
@@ -31,7 +36,12 @@ let fileCache: { lastUpdated: string; pairs: RaydiumClmmPairDataArray[] } = {
 };
 
 if (fs.existsSync(CACHE_PATH)) {
+    console.log('Raydium CACHE exists')
+
     fileCache = require("./raydium-clmm-cache").default;
+}
+else {
+    console.log('Raydium CACHE NOT exists')
 }
 
 export const CLMM_CACHE = fileCache;

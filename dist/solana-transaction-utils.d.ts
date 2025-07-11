@@ -1,15 +1,28 @@
 import { type AccountMeta, type ConfirmedSignatureInfo, type ParsedInstruction, type ParsedTransactionWithMeta, type PartiallyDecodedInstruction } from "@solana/web3.js";
-import { MeteoraDownloaderConfig } from "./meteora-dlmm-downloader";
+import { RaydiumDownloaderConfig } from "./clmm-downloader";
 export declare function getInstructionIndex(transaction: ParsedTransactionWithMeta, instruction: PartiallyDecodedInstruction): number;
 export declare function getAccountMetas(transaction: ParsedTransactionWithMeta, instruction: PartiallyDecodedInstruction): AccountMeta[];
-export declare function getTokenTransfers(transaction: ParsedTransactionWithMeta, index: number): (ParsedInstruction | PartiallyDecodedInstruction)[];
-interface ParsedTransactionStreamConfig extends MeteoraDownloaderConfig {
+export declare function getTokenTransfers(transaction: ParsedTransactionWithMeta, index: number): ParsedTokenTransfer[];
+interface ParsedTransactionStreamConfig extends RaydiumDownloaderConfig {
     onParsedTransactionsReceived: (transactions: (ParsedTransactionWithMeta | null)[]) => Promise<any>;
     onSignaturesReceived?: (signatures: ConfirmedSignatureInfo[]) => Promise<any>;
     onDone?: () => any;
     mostRecentSignature?: string;
     oldestSignature?: string;
     oldestDate?: Date;
+}
+interface ParsedTokenTransfer extends ParsedInstruction {
+    program: "spl-token";
+    parsed: {
+        type: string;
+        info: {
+            mint: string;
+            tokenAmount?: {
+                amount: string;
+            };
+            amount?: string;
+        };
+    };
 }
 export declare class ParsedTransactionStream {
     private _account;

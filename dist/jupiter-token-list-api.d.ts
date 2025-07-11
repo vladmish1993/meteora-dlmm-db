@@ -13,13 +13,10 @@ export interface TokenMeta {
     decimals: number;
     logoURI: string;
 }
-export declare function getFullJupiterTokenList(): Promise<TokenMeta[]>;
 export declare class JupiterTokenListApi {
-    private static _api;
-    static updateThrottleParameters(params: {
-        max: number;
-        interval: number;
-    }): void;
+    #private;
+    static _ensureLoaded(): Promise<void>;
     static getToken(address: string): Promise<TokenMeta | null>;
-    private static _getToken;
 }
+export declare function getFullJupiterTokenList(): Promise<TokenMeta[]>;
+export declare function _getJupiterPrices(mints: string[]): Promise<Record<string, number>>;

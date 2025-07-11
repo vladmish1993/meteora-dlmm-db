@@ -45,10 +45,6 @@ export interface RaydiumDownloaderConfig extends ConnectionConfig {
             max: number;
             interval: number;
         };
-        jupiterTokenList?: {
-            max: number;
-            interval: number;
-        };
     };
 }
 
@@ -123,11 +119,6 @@ export default class RaydiumDownloader {
         if (config.throttleParameters) {
             if (config.throttleParameters.raydiumClmm) {
                 RaydiumClmmApi.updateThrottleParameters(config.throttleParameters.raydiumClmm);
-            }
-            if (config.throttleParameters.jupiterTokenList) {
-                JupiterTokenListApi.updateThrottleParameters(
-                    config.throttleParameters.jupiterTokenList,
-                );
             }
         }
         this._isComplete = await this._db.isComplete(this._account);
