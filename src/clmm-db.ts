@@ -1191,6 +1191,10 @@ export default class ClmmDb {
         await this.save();
     }
 
+    async getAllTransactions(): Promise<ClmmDbTx[]> {
+        return this._getAll(this._getAllTransactions);
+    }
+
     private async _getAll<ClmmDbRow>(
         statement: Statement,
     ): Promise<ClmmDbRow[]> {
